@@ -79,7 +79,7 @@ Output: one normalized, flagged VCF per sample.
 
 The CHIP stage requires reads a cohort-mode CSV (`parser_mode: cohort`), which has one row per sample and variant.
 
-## 4. Aggregate / release (`aggregate.smk`, proposed)
+## 4. Aggregate / release (`aggregate.smk`)
 
 | Table | One row per | Columns |
 |---|---|---|
@@ -144,7 +144,7 @@ Outputs:
 - `chip_artifact.csv`: one row per variant, with all flags. This is the manual-review table.
 - `chip_calls.artifact.csv`: one row per call, with the flags joined on.
 
-### 5e. Final callset (`chip_final`, proposed)
+### 5e. Final callset (`chip_final`)
 
 - Apply the final cutoffs (min AD, recurrence, germline, manual-review decisions) to produce the CHIP callset.
 - Optional OncoKB annotation, run once on the merged CSV. 
