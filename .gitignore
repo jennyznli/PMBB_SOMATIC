@@ -1,0 +1,15 @@
+*
+!.gitignore
+!config/
+!config/*.yaml
+!rules/
+!rules/*.smk
+!scripts/
+!scripts/*.py
+!scripts/*.R
+!whitelist/
+!whitelist/Full_CHIP_gene_list_20260324.txt
+!whitelist/CHIP_missense_vars_cv_20261113.txt
+!whitelist/CHIP_nonsense_FS_vars_cv_20260324.txt
+!whitelist/CHIP_splice_vars_cv_20260324.txt
+!whitelist/chip_whitelist_rules_20261113.tsv
