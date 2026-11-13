@@ -1,0 +1,28 @@
+# chip.smk
+python: "python3"
+input: "TODO" 
+outdir: "chip"
+whitelist_dir: "TODO"
+
+# seq filter
+min_dp: 20
+min_alt_depth: 5
+min_vaf: 0.02
+
+# recurrence testing
+min_carriers: 20
+
+# batch testing
+batch_test: false
+p_batch: 0.05
+
+# age testing
+age_test: false
+p_age: 0.10
+exempt_genes: [DNMT3A]   # no age test
+covariates_tsv: ""
+
+# germline testing
+germline_test: true
+p_binom: 0.05
+gnomad_max_af: 0.005

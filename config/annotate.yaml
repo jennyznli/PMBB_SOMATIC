@@ -1,0 +1,16 @@
+# annotate.smk
+outdir: "annotate"
+parser_mode: "no_sample" 
+vcfs:  
+  TODO: "TODO"
+
+vep:
+  container: "/appl/containers/ensembl-vep_release_116.0.sif"
+  cache_version: 116
+  vep_dir: "/home/jennyzli/.vep"
+  resources_dir: "/home/jennyzli/resources"
+  fasta: "/opt/vep/resources/Genomes/Human/hg38/fa/Homo_sapiens_assembly38.fasta"
+  loftee_repo: "/home/jennyzli/.vep/Plugins/loftee"
+  loftee_data: "/home/jennyzli/.vep/Plugins/GRCh38"
+  samtools: "/appl/samtools-1.21/bin/samtools"
+  parser_env: "vep_parser"

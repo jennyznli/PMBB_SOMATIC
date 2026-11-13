@@ -1,0 +1,26 @@
+reference:
+  fasta: "/home/jennyzli/resources/Genomes/Human/hg38/fa/Homo_sapiens_assembly38.fasta"
+  fai: "/home/jennyzli/resources/Genomes/Human/hg38/fa/Homo_sapiens_assembly38.fasta.fai"
+  dict: "/home/jennyzli/resources/Genomes/Human/hg38/fa/Homo_sapiens_assembly38.dict"
+
+resources:
+  gnomad: "/home/jennyzli/software/mutect2/af-only-gnomad.hg38.vcf.gz"
+  variants_for_contamination: "/home/jennyzli/software/mutect2/small_exac_common_3.hg38.vcf.gz"
+  targets_bed: "TODO"    
+  masked_intervals: ""
+
+samples:
+  normals_tsv: "TODO"   
+  cases_tsv: "TODO"   
+
+pon:
+  name: "mutect2_pon"
+  use_pon: true
+  existing_pon_vcf: ""
+
+analysis:
+  label: "pon"
+
+parameters:
+  m2_extra_args: ""
+  m2_extra_filtering_args: ""
