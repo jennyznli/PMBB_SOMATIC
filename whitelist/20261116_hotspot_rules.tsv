@@ -1,0 +1,18 @@
+# Hotspot rules			
+# var_class: missense | nonsense | frameshift | lof | splice | inframe_deletion | inframe_insertion | inframe			
+gene	var_class	aa_ranges	note
+AKT1	"missense,lof"		Kostecka 2022
+CBFB	"missense,lof"		Kostecka 2022
+CDH1	"missense,lof"		Kostecka 2022
+MAP3K1	"missense,lof"		Kostecka 2022
+MED12	missense		Kostecka 2022
+NCOR1	"missense,lof"		Kostecka 2022
+PIK3CA	"missense,lof"		Kostecka 2022
+TP53	"missense,lof"		Kostecka 2022
+RAD50	"missense,lof"		Kostecka 2022
+RB1	"missense,lof"		Kostecka 2022
+TBX3	"missense,lof"		Kostecka 2022
+AR1	"missense,lof"		
+ARID1B	"missense,lof"		
+CLTR	"missense,lof"		
+PIK3R1	"missense,lof"		Gray
