@@ -113,6 +113,7 @@ def index_for(wildcards):
 
 def all_targets(wildcards):
     targets = [f"{TUMOR_DIR}/{s}/{s}.{ANALYSIS_LABEL}.filtered.vcf.gz" for s in TUMOR_SAMPLES]
+    targets.append(f"{TUMOR_DIR}/contamination.tsv")
     if BUILD_PON:
         targets.append(PON_VCF)
     return targets
@@ -306,6 +307,23 @@ rule calculate_contamination:
             -O {output.contamination} \
             --tumor-segmentation {output.segments}
         """
+
+
+# one row per sample (sample_id = cases_tsv ID, not the read-group SM) -> joined into sample_qc
+rule gather_contamination:
+    input:
+        expand(f"{TUMOR_DIR}/{{sample}}/{{sample}}.{ANALYSIS_LABEL}.contamination.table", sample=list(TUMOR_SAMPLES)),
+    output:
+        f"{TUMOR_DIR}/contamination.tsv",
+    params:
+        samples=list(TUMOR_SAMPLES),
+    run:
+        with open(output[0], "w") as fo:
+            fo.write("sample_id\tcontamination\tcontamination_error\n")
+            for s, path in zip(params.samples, input):
+                with open(path) as fh:
+                    row = [l.rstrip("\n").split("\t") for l in fh if l.strip()][1]
+                fo.write(f"{s}\t{row[1]}\t{row[2]}\n")
 
 
 rule filter_mutect_calls_tumor:
