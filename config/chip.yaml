@@ -2,7 +2,7 @@
 python: "python3"
 input: "TODO" 
 outdir: "chip"
-whitelist_dir: "TODO"
+whitelist_dir: "whitelist"
 
 # seq filter
 min_dp: 20

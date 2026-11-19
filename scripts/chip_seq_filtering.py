@@ -2,7 +2,7 @@
 CHIP sequence-level filtering on a cohort VEP csv
 
 Steps:
-  01  Gene in full CHIP list, Bio.type == protein_coding,
+  01  Gene in the whitelist gene list (latest *_chip_rheum_genes.txt), Bio.type == protein_coding,
       Sample.AltFrac / Sample.Depth / Sample.AltDepth all present (not '', '.', 'NA', '-1')
   02  MANE.Select or MANE.PlusClinical filled
   03  Sample.Depth >= --min-dp
@@ -16,7 +16,7 @@ import argparse
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from chip_whitelist import _latest, _rows  # noqa: E402
+from chip_whitelist import GENES_PATTERN, _latest, _gene_accessions  # noqa: E402
 
 STEPS = ['s01_gene_biotype_values', 's02_mane', 's03_dp', 's04_alt_depth', 's05_vaf']
 VALUE_COLS = ('Sample.AltFrac', 'Sample.Depth', 'Sample.AltDepth')
@@ -48,8 +48,8 @@ def main(argv=None):
     p.add_argument('--min-vaf', type=float, default=0.02)
     a = p.parse_args(argv)
 
-    gene_file = _latest(a.whitelist_dir, 'Full_CHIP_gene_list_*.txt')
-    genes = {r['Gene'] for r in _rows(gene_file)}
+    gene_file = _latest(a.whitelist_dir, GENES_PATTERN)
+    genes = set(_gene_accessions(gene_file))
     drop = set(filter(None, a.drop_cols.split(',')))
 
     n, samples = Counter(), set()

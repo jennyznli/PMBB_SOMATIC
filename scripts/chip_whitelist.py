@@ -1,12 +1,12 @@
 """
-CHIP whitelist annotator for VEP-parsed rows 
+CHIP whitelist annotator for VEP-parsed rows
 
-Whitelist:
-  Full_CHIP_gene_list_*.txt
-  CHIP_missense_vars_cv_*.txt 
-  CHIP_nonsense_FS_vars_cv_*.txt 
-  CHIP_splice_vars_cv_*.txt 
-  chip_whitelist_rules_*.tsv 
+Whitelist dir (latest file per pattern):
+  *_chip_rheum_genes.txt   gene list: one gene per line, or a tsv w/ Gene (+ Accession) columns
+  *_chip_missense.txt      Gene, AAChange
+  *_chip_lof.txt           Gene
+  *_chip_splice.txt        Gene
+  *_chip_rules.tsv         gene, var_class, exons, aa_ranges, action, note
 
 Added columns:
   wl_whitelist     meets any whitelist criteria
@@ -15,8 +15,8 @@ Added columns:
   wl_splice        splice variant
   wl_exception     exception
   wl_manualreview  needs manual review
-  wl_rule          custom written fields read in from chip_whitelist_rules_*.tsv
-  wl_transcript    MANE.Select == the gene list's Accession
+  wl_rule          custom written fields read in from *_chip_rules.tsv
+  wl_transcript    MANE.Select == the gene list's Accession; '.' = no MANE / no Accession in the gene list
 """
 
 import os
@@ -40,11 +40,23 @@ CLASS_OF={'missense_variant':'missense',
 CLASS_ALIASES={'lof':{'nonsense','frameshift'},'inframe':{'inframe_deletion','inframe_insertion'}}
 VALID_CLASSES=set(CLASS_OF.values())|set(CLASS_ALIASES)
 
+# gene list pattern, shared w/ chip_seq_filtering.py
+GENES_PATTERN='*_chip_rheum_genes.txt'
+
 # whitelist file reader, stores rows as a list of dicts
 def _rows(path):
     with open(path,newline='') as fh:
-        lines=[l.replace('\r','') for l in fh if l.strip() and not l.startswith('#')]
+        # '"#...' = a comment line Excel quoted on save
+        lines=[l.replace('\r','') for l in fh if l.strip() and not l.lstrip('"').startswith('#')]
     return [{k.strip():(v or '').strip() for k,v in r.items()} for r in csv.DictReader(lines,delimiter='\t')]
+
+# gene list -> {gene: accession}; a plain one-gene-per-line file (no header) gives accession ''
+def _gene_accessions(path):
+    with open(path) as fh:
+        lines=[l.strip() for l in fh if l.strip() and not l.startswith('#')]
+    if lines and lines[0].split('\t')[0]=='Gene':
+        return {r['Gene']:r.get('Accession','') for r in _rows(path)}
+    return {l.split('\t')[0]:'' for l in lines}
 
 # returns the latest file matching a glob pattern
 def _latest(d,pattern):
@@ -70,6 +82,14 @@ def _first_int(s):
 def _region_num(s):
     return _first_int(re.split(r'[|/]',s or '')[0])
 
+# returns the residue span (lo, hi) of a variant: HGVSp (p.Met326IlefsTer19 -> 326, p.Glu746_Ala750del -> 746-750),
+# else Protein.position; None if neither has a position
+HGVSP_RE=re.compile(r'p\.[A-Z][a-z]{2}(\d+)(?:_[A-Z][a-z]{2}(\d+))?')
+def _aa_span(row):
+    m=HGVSP_RE.search(row.get('HGVSp') or '')
+    pos=[int(x) for x in (m.groups() if m else re.findall(r'\d+',(row['Protein.position'] or '').split('/')[0])) if x]
+    return (min(pos),max(pos)) if pos else None
+
 # returns the whitelist classes for a VEP consequence string
 def var_classes(consequence):
     return {CLASS_OF[t] for t in (consequence or '').split('&') if t in CLASS_OF}
@@ -84,12 +104,12 @@ def protein_change(amino_acids,protein_position):
 
 class Whitelist:
     def __init__(self,wl_dir,rules_path=None):
-        self.paths={'genes':_latest(wl_dir,'Full_CHIP_gene_list_*.txt'),
-                    'missense':_latest(wl_dir,'CHIP_missense_vars_cv_*.txt'),
-                    'lof':_latest(wl_dir,'CHIP_nonsense_FS_vars_cv_*.txt'),
-                    'splice':_latest(wl_dir,'CHIP_splice_vars_cv_*.txt'),
-                    'rules':rules_path or _latest(wl_dir,'chip_whitelist_rules_*.tsv')}
-        self.accession={r['Gene']:r['Accession'] for r in _rows(self.paths['genes'])}
+        self.paths={'genes':_latest(wl_dir,GENES_PATTERN),
+                    'missense':_latest(wl_dir,'*_chip_missense.txt'),
+                    'lof':_latest(wl_dir,'*_chip_lof.txt'),
+                    'splice':_latest(wl_dir,'*_chip_splice.txt'),
+                    'rules':rules_path or _latest(wl_dir,'*_chip_rules.tsv')}
+        self.accession=_gene_accessions(self.paths['genes'])
         self.missense={(r['Gene'],r['AAChange']) for r in _rows(self.paths['missense'])}
         self.lof_genes={r['Gene'] for r in _rows(self.paths['lof'])}
         self.splice_genes={r['Gene'] for r in _rows(self.paths['splice'])}
@@ -133,9 +153,9 @@ class Whitelist:
             return False
 
         if rule['aa']:
-            # check if the protein position matches 
-            pos=_first_int(row['Protein.position'])
-            if pos is None or not any(lo<=pos<=hi for lo,hi in rule['aa']):
+            # check if the variant's residue span overlaps a range
+            span=_aa_span(row)
+            if span is None or not any(lo<=span[1] and span[0]<=hi for lo,hi in rule['aa']):
                 return False
 
         if rule['exons']:
@@ -164,8 +184,8 @@ class Whitelist:
             classes=var_classes(row['Variant.Consequence'])
             mane=(row['MANE.Select'] or '').split('.')[0]
 
-            # TRUE / FALSE = MANE transcript (version dropped) matches the whitelist Accession; '.' = no MANE
-            if mane:
+            # TRUE / FALSE = MANE transcript (version dropped) matches the whitelist Accession; '.' = no MANE / Accession
+            if mane and self.accession[gene]:
                 out['wl_transcript']=mane==self.accession[gene]
             
             # check if missense and protein change is in the missense whitelist
@@ -220,7 +240,7 @@ def main(argv=None):
     p.add_argument('-i','--input',required=True)
     p.add_argument('-o','--output',required=True)
     p.add_argument('--whitelist-dir',default='whitelist')
-    p.add_argument('--rules',default=None,help='default: latest WHITELIST_DIR/chip_whitelist_rules_*.tsv')
+    p.add_argument('--rules',default=None,help='default: latest WHITELIST_DIR/*_chip_rules.tsv')
     args=p.parse_args(argv)
     wl=Whitelist(args.whitelist_dir,args.rules)
     n=n_wl=n_mr=0
