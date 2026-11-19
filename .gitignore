@@ -8,4 +8,6 @@
 !scripts/
 !scripts/*.py
 !scripts/*.R
-!whitelist/*
+!whitelist/*.tsv
+!whitelist/*.txt
+!whitelist/rheum/*.txt
