@@ -13,3 +13,5 @@
 !whitelist/*.txt
 !whitelist/rheum/
 !whitelist/rheum/*.txt
+!R/
+!R/*.R
